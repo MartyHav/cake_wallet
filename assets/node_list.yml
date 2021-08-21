@@ -1,5 +1,7 @@
 -
-  uri: xmr-node-uk.cakewallet.com:18081
+  uri: vault.havenprotocol.org:443
+  login: super
+  password: super
   is_default: true
 -
   uri: xmr-node-eu.cakewallet.com:18081
@@ -22,10 +24,10 @@
 -
   uri: node.imonero.org:18081
   is_default: false
-
+-
   uri: node.c3pool.com:18081
   is_default: false
-  
+-  
   uri: xmr.prprpr.icu:18081
   is_default: false
 
