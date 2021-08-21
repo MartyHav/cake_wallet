@@ -30,6 +30,8 @@ class TransactionInfoRow extends Struct {
 
   Pointer<Utf8> paymentId;
 
+  Pointer<Utf8> assetType;
+
   @Int64()
   int datetime;
 
@@ -38,4 +40,5 @@ class TransactionInfoRow extends Struct {
   bool getIsPending() => isPending != 0;
   String getHash() => Utf8.fromUtf8(hash);
   String getPaymentId() => Utf8.fromUtf8(paymentId);
+  String getAssetType() => Utf8.fromUtf8(assetType);
 }
