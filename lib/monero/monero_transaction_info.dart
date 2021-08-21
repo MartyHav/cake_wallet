@@ -8,7 +8,8 @@ import 'package:cw_monero/transaction_history.dart';
 
 class MoneroTransactionInfo extends TransactionInfo {
   MoneroTransactionInfo(this.id, this.height, this.direction, this.date,
-      this.isPending, this.amount, this.accountIndex, this.addressIndex, this.fee);
+      this.isPending, this.amount, this.accountIndex, this.addressIndex, this.fee,
+      this.assetType);
 
   MoneroTransactionInfo.fromMap(Map map)
       : id = (map['hash'] ?? '') as String,
@@ -23,7 +24,8 @@ class MoneroTransactionInfo extends TransactionInfo {
         accountIndex = int.parse(map['accountIndex'] as String),
         addressIndex = map['addressIndex'] as int,
         key = getTxKey((map['hash'] ?? '') as String),
-        fee = map['fee'] as int ?? 0;
+        fee = map['fee'] as int ?? 0,
+        assetType = map['assetType'] as String;
 
   MoneroTransactionInfo.fromRow(TransactionInfoRow row)
       : id = row.getHash(),
@@ -36,7 +38,8 @@ class MoneroTransactionInfo extends TransactionInfo {
         accountIndex = row.subaddrAccount,
         addressIndex = row.subaddrIndex,
         key = getTxKey(row.getHash()),
-        fee = row.fee;
+        fee = row.fee,
+        assetType = row.getAssetType();
 
   final String id;
   final int height;
@@ -47,6 +50,7 @@ class MoneroTransactionInfo extends TransactionInfo {
   final int amount;
   final int fee;
   final int addressIndex;
+  final String assetType;
   String recipientAddress;
   String key;
 
@@ -54,7 +58,7 @@ class MoneroTransactionInfo extends TransactionInfo {
 
   @override
   String amountFormatted() =>
-      '${formatAmount(moneroAmountToString(amount: amount))} XMR';
+      '${formatAmount(moneroAmountToString(amount: amount))} ${assetType}';
 
   @override
   String fiatAmount() => _fiatAmount ?? '';
@@ -64,5 +68,5 @@ class MoneroTransactionInfo extends TransactionInfo {
 
   @override
   String feeFormatted() =>
-      '${formatAmount(moneroAmountToString(amount: fee))} XMR';
+      '${formatAmount(moneroAmountToString(amount: fee))} ${assetType}';
 }
