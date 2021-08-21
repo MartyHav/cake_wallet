@@ -6,7 +6,7 @@ CryptoCurrency currencyForWalletType(WalletType type) {
     case WalletType.bitcoin:
       return CryptoCurrency.btc;
     case WalletType.monero:
-      return CryptoCurrency.xmr;
+      return CryptoCurrency.xhv;
     case WalletType.litecoin:
       return CryptoCurrency.ltc;
     default:
