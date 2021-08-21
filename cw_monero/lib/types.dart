@@ -24,6 +24,10 @@ typedef GetSeed = Pointer<Utf8> Function();
 
 typedef GetAddress = Pointer<Utf8> Function(int, int);
 
+typedef GetHavenFullBalance = Pointer<Int64> Function(int);
+
+typedef GetHavenUnlockedBalance = Pointer<Int64> Function(int);
+
 typedef GetFullBalance = int Function(int);
 
 typedef GetUnlockedBalance = int Function(int);
@@ -86,6 +90,7 @@ typedef TransactionsGetAll = Pointer<Int64> Function();
 
 typedef TransactionCreate = int Function(
     Pointer<Utf8> address,
+    Pointer<Utf8> assetType,
     Pointer<Utf8> paymentId,
     Pointer<Utf8> amount,
     int priorityRaw,
@@ -108,3 +113,7 @@ typedef CloseCurrentWallet = void Function();
 typedef OnStartup = void Function();
 
 typedef RescanBlockchainAsync = void Function();
+
+typedef AssetTypes = Pointer<Pointer<Utf8>> Function();
+
+typedef AssetTypesSize = int Function();
