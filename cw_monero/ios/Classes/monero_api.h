@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "CwWalletListener.h"
+#include <map>
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,8 +17,8 @@ bool is_wallet_exist(char *path);
 char *get_filename();
 const char *seed();
 char *get_address(uint32_t account_index, uint32_t address_index);
-uint64_t get_full_balance(uint32_t account_index);
-uint64_t get_unlocked_balance(uint32_t account_index);
+int64_t *get_full_balance(uint32_t account_index);
+int64_t *get_unlocked_balance(uint32_t account_index);
 uint64_t get_current_height();
 uint64_t get_node_height();
 

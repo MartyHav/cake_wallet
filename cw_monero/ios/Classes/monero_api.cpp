@@ -8,8 +8,10 @@
 #include "CwWalletListener.h"
 #if __APPLE__
 #include "../External/android/monero/include/wallet2_api.h"
+#include "../External/android/monero/include/asset_types.h"
 #else
 #include "../External/android/x86/include/wallet2_api.h"
+#include "../External/android/x86/include/asset_types.h"
 #endif
 
 using namespace std::chrono_literals;
@@ -29,6 +31,7 @@ extern "C"
             value = _value;
         }
     };
+
 
     struct SubaddressRow
     {
@@ -53,6 +56,18 @@ extern "C"
         {
             id = static_cast<uint64_t>(_id);
             label = _label;
+        }
+    };
+
+    struct HavenBalance
+    {
+        uint64_t amount;
+        char *assetType;
+
+        HavenBalance(char *_assetType, uint64_t _amount)
+        {
+            amount = _amount;
+            assetType = _assetType;
         }
     };
 
@@ -138,6 +153,7 @@ extern "C"
         
         char *hash;
         char *paymentId;
+        char *assetType;
 
         int64_t datetime;
 
@@ -156,6 +172,7 @@ extern "C"
             std::string *hash_str = new std::string(transaction->hash());
             hash = strdup(hash_str->c_str());
             paymentId = strdup(transaction->paymentId().c_str());
+            assetType = strdup(transaction->assetType().c_str());
         }
     };
 
@@ -366,14 +383,85 @@ extern "C"
         return strdup(get_current_wallet()->seed().c_str());
     }
 
-    uint64_t get_full_balance(uint32_t account_index)
+    int64_t *get_full_balance(uint32_t account_index)
     {
-        return get_current_wallet()->balance(account_index);
+        std::map<std::string, uint64_t> accountBalance;
+        std::map<uint32_t, std::map<std::string, uint64_t>> balanceSubaddresses = get_current_wallet()->balance(account_index);
+
+        //prefill balances
+        for (const auto &asset_type : offshore::ASSET_TYPES) {
+
+            accountBalance[asset_type] = 0;
+        }
+        // balances are mapped to their subaddress
+        // we compute total balances of account
+        for (auto const& balanceSubaddress : balanceSubaddresses)
+            {
+                
+                std::map<std::string, uint64_t> balanceOfSubaddress = balanceSubaddress.second;
+
+                 for (auto const& balance : balanceOfSubaddress)
+                    {
+                
+                        const std::string &assetType = balance.first;
+                        const uint64_t &amount = balance.second;
+                        accountBalance[assetType] +=amount;
+                    }
+            }
+
+        size_t size = accountBalance.size();
+        int64_t *balanceAddresses = (int64_t *)malloc(size * sizeof(int64_t));
+        int i = 0;
+
+        for (auto const& balance : accountBalance)
+        {
+            char *assetType = strdup(balance.first.c_str());
+            HavenBalance *hb = new HavenBalance(assetType, balance.second);
+            balanceAddresses[i] = reinterpret_cast<int64_t>(hb);
+            i++;
+        }
+        return balanceAddresses;
     }
 
-    uint64_t get_unlocked_balance(uint32_t account_index)
+    int64_t *get_unlocked_balance(uint32_t account_index)
     {
-        return get_current_wallet()->unlockedBalance(account_index);
+        std::map<std::string, uint64_t> accountBalance;
+        std::map<uint32_t, std::map<std::string, uint64_t>> balanceSubaddresses = get_current_wallet()->unlockedBalance(account_index);
+
+
+        //prefill balances
+        for (const auto &asset_type : offshore::ASSET_TYPES) {
+
+            accountBalance[asset_type] = 0;
+        }
+        // balances are mapped to their subaddress
+        // we compute total balances of account
+        for (auto const& balanceSubaddress : balanceSubaddresses)
+            {
+                
+                std::map<std::string, uint64_t> balanceOfSubaddress = balanceSubaddress.second;
+
+                 for (auto const& balance : balanceOfSubaddress)
+                    {
+                
+                        const std::string &assetType = balance.first;
+                        const uint64_t &amount = balance.second;
+                        accountBalance[assetType] +=amount;
+                    }
+            }
+
+        size_t size = accountBalance.size();
+        int64_t *balanceAddresses = (int64_t *)malloc(size * sizeof(int64_t));
+        int i = 0;
+
+        for (auto const& balance : accountBalance)
+        {
+            char *assetType = strdup(balance.first.c_str());
+            HavenBalance *hb = new HavenBalance(assetType, balance.second);
+            balanceAddresses[i] = reinterpret_cast<int64_t>(hb);
+            i++;
+        }
+        return balanceAddresses;
     }
 
     uint64_t get_current_height()
@@ -455,7 +543,7 @@ extern "C"
         get_current_wallet()->store(std::string(path));
     }
 
-    bool transaction_create(char *address, char *payment_id, char *amount,
+    bool transaction_create(char *address, char *asset_type, char *payment_id, char *amount,
                                               uint8_t priority_raw, uint32_t subaddr_account, Utf8Box &error, PendingTransactionRaw &pendingTransaction)
     {
         nice(19);
@@ -472,11 +560,11 @@ extern "C"
         if (amount != nullptr)
         {
             uint64_t _amount = Monero::Wallet::amountFromString(std::string(amount));
-            transaction = m_wallet->createTransaction(std::string(address), _payment_id, _amount, m_wallet->defaultMixin(), priority, subaddr_account);
+            transaction = m_wallet->createTransaction(std::string(address), _payment_id, _amount, m_wallet->defaultMixin(), priority, subaddr_account, {}, std::string(asset_type), std::string(asset_type));
         }
         else
         {
-            transaction = m_wallet->createTransaction(std::string(address), _payment_id, Monero::optional<uint64_t>(), m_wallet->defaultMixin(), priority, subaddr_account);
+            transaction = m_wallet->createTransaction(std::string(address), _payment_id, Monero::optional<uint64_t>(), m_wallet->defaultMixin(), priority, subaddr_account, {}, std::string(asset_type), std::string(asset_type));
         }
         
         int status = transaction->status();
@@ -699,7 +787,7 @@ extern "C"
     void on_startup()
     {
         Monero::Utils::onStartup();
-        Monero::WalletManagerFactory::setLogLevel(0);
+        Monero::WalletManagerFactory::setLogLevel(4);
     }
 
     void rescan_blockchain()
@@ -711,6 +799,32 @@ extern "C"
     {
         return strdup(m_wallet->getTxKey(std::string(txId)).c_str());
     }
+
+    int32_t asset_types_size() 
+    {
+        return offshore::ASSET_TYPES.size();
+    }
+
+    char **asset_types() 
+    {
+        size_t size = offshore::ASSET_TYPES.size();
+        char **assetTypesPts;
+        assetTypesPts = (char **) malloc( size * sizeof(char*));
+
+        for (int i = 0; i < size; i++)
+        {
+
+            std::string asset = offshore::ASSET_TYPES[i];
+            //assetTypes[i] = (char *)malloc( 5 * sizeof(char));
+            assetTypesPts[i] = strdup(asset.c_str());
+        }
+
+        return assetTypesPts;
+    }
+
+    
+
+
 
 #ifdef __cplusplus
 }
