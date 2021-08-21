@@ -1,5 +1,6 @@
 import 'package:cake_wallet/bitcoin/bitcoin_wallet_service.dart';
 import 'package:cake_wallet/bitcoin/litecoin_wallet_service.dart';
+import 'package:cake_wallet/bitcoin/unspent_coins_info.dart';
 import 'package:cake_wallet/core/backup_service.dart';
 import 'package:cake_wallet/core/wallet_service.dart';
 import 'package:cake_wallet/entities/biometric_auth.dart';
@@ -39,6 +40,8 @@ import 'package:cake_wallet/src/screens/setup_pin_code/setup_pin_code.dart';
 import 'package:cake_wallet/src/screens/support/support_page.dart';
 import 'package:cake_wallet/src/screens/trade_details/trade_details_page.dart';
 import 'package:cake_wallet/src/screens/transaction_details/transaction_details_page.dart';
+import 'package:cake_wallet/src/screens/unspent_coins/unspent_coins_details_page.dart';
+import 'package:cake_wallet/src/screens/unspent_coins/unspent_coins_list_page.dart';
 import 'package:cake_wallet/src/screens/wallet_keys/wallet_keys_page.dart';
 import 'package:cake_wallet/src/screens/exchange/exchange_page.dart';
 import 'package:cake_wallet/src/screens/exchange/exchange_template_page.dart';
@@ -72,10 +75,14 @@ import 'package:cake_wallet/view_model/node_list/node_create_or_edit_view_model.
 import 'package:cake_wallet/view_model/order_details_view_model.dart';
 import 'package:cake_wallet/view_model/rescan_view_model.dart';
 import 'package:cake_wallet/view_model/restore_from_backup_view_model.dart';
+import 'package:cake_wallet/view_model/send/send_template_view_model.dart';
 import 'package:cake_wallet/view_model/setup_pin_code_view_model.dart';
 import 'package:cake_wallet/view_model/support_view_model.dart';
 import 'package:cake_wallet/view_model/transaction_details_view_model.dart';
 import 'package:cake_wallet/view_model/trade_details_view_model.dart';
+import 'package:cake_wallet/view_model/unspent_coins/unspent_coins_details_view_model.dart';
+import 'package:cake_wallet/view_model/unspent_coins/unspent_coins_item.dart';
+import 'package:cake_wallet/view_model/unspent_coins/unspent_coins_list_view_model.dart';
 import 'package:cake_wallet/view_model/wallet_address_list/wallet_address_edit_or_create_view_model.dart';
 import 'package:cake_wallet/view_model/auth_view_model.dart';
 import 'package:cake_wallet/view_model/dashboard/dashboard_view_model.dart';
@@ -112,7 +119,6 @@ import 'package:cake_wallet/store/templates/exchange_template_store.dart';
 import 'package:cake_wallet/entities/template.dart';
 import 'package:cake_wallet/exchange/exchange_template.dart';
 import 'package:cake_wallet/.secrets.g.dart' as secrets;
-import 'package:cake_wallet/entities/push_notifications_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -125,6 +131,7 @@ Box<Template> _templates;
 Box<ExchangeTemplate> _exchangeTemplates;
 Box<TransactionDescription> _transactionDescriptionBox;
 Box<Order> _ordersSource;
+Box<UnspentCoinsInfo> _unspentCoinsInfoSource;
 
 Future setup(
     {Box<WalletInfo> walletInfoSource,
@@ -134,7 +141,8 @@ Future setup(
     Box<Template> templates,
     Box<ExchangeTemplate> exchangeTemplates,
     Box<TransactionDescription> transactionDescriptionBox,
-    Box<Order> ordersSource}) async {
+    Box<Order> ordersSource,
+    Box<UnspentCoinsInfo> unspentCoinsInfoSource}) async {
   _walletInfoSource = walletInfoSource;
   _nodeSource = nodeSource;
   _contactSource = contactSource;
@@ -143,6 +151,7 @@ Future setup(
   _exchangeTemplates = exchangeTemplates;
   _transactionDescriptionBox = transactionDescriptionBox;
   _ordersSource = ordersSource;
+  _unspentCoinsInfoSource = unspentCoinsInfoSource;
 
   if (!_isSetupFinished) {
     getIt.registerSingletonAsync<SharedPreferences>(
@@ -233,9 +242,6 @@ Future setup(
       settingsStore: getIt.get<SettingsStore>(),
       fiatConvertationStore: getIt.get<FiatConversionStore>()));
 
-
-  getIt.registerFactory(() => PushNotificationsService());
-
   getIt.registerFactory(() => DashboardViewModel(
       balanceViewModel: getIt.get<BalanceViewModel>(),
       appStore: getIt.get<AppStore>(),
@@ -243,8 +249,7 @@ Future setup(
       tradeFilterStore: getIt.get<TradeFilterStore>(),
       transactionFilterStore: getIt.get<TransactionFilterStore>(),
       settingsStore: settingsStore,
-      ordersStore: getIt.get<OrdersStore>(),
-      pushNotificationsService: getIt.get<PushNotificationsService>()));
+      ordersStore: getIt.get<OrdersStore>()));
 
   getIt.registerFactory<AuthService>(() => AuthService(
       secureStorage: getIt.get<FlutterSecureStorage>(),
@@ -307,10 +312,17 @@ Future setup(
           addressEditOrCreateViewModel:
               getIt.get<WalletAddressEditOrCreateViewModel>(param1: item)));
 
-  getIt.registerFactory<SendViewModel>(() => SendViewModel(
+  getIt.registerFactory<SendTemplateViewModel>(() => SendTemplateViewModel(
       getIt.get<AppStore>().wallet,
       getIt.get<AppStore>().settingsStore,
       getIt.get<SendTemplateStore>(),
+      getIt.get<FiatConversionStore>()
+  ));
+
+  getIt.registerFactory<SendViewModel>(() => SendViewModel(
+      getIt.get<AppStore>().wallet,
+      getIt.get<AppStore>().settingsStore,
+      getIt.get<SendTemplateViewModel>(),
       getIt.get<FiatConversionStore>(),
       _transactionDescriptionBox));
 
@@ -318,7 +330,8 @@ Future setup(
       () => SendPage(sendViewModel: getIt.get<SendViewModel>()));
 
   getIt.registerFactory(
-      () => SendTemplatePage(sendViewModel: getIt.get<SendViewModel>()));
+      () => SendTemplatePage(
+          sendTemplateViewModel: getIt.get<SendTemplateViewModel>()));
 
   getIt.registerFactory(() => WalletListViewModel(
       _walletInfoSource,
@@ -361,7 +374,8 @@ Future setup(
   getIt.registerFactoryParam<MoneroAccountEditOrCreateViewModel,
           AccountListItem, void>(
       (AccountListItem account, _) => MoneroAccountEditOrCreateViewModel(
-          (getIt.get<AppStore>().wallet as MoneroWallet).accountList,
+          (getIt.get<AppStore>().wallet as MoneroWallet).walletAddresses.accountList,
+          wallet: getIt.get<AppStore>().wallet,
           accountListItem: account));
 
   getIt.registerFactoryParam<MoneroAccountEditOrCreatePage, AccountListItem,
@@ -445,9 +459,11 @@ Future setup(
 
   getIt.registerFactory(() => MoneroWalletService(_walletInfoSource));
 
-  getIt.registerFactory(() => BitcoinWalletService(_walletInfoSource));
+  getIt.registerFactory(() =>
+      BitcoinWalletService(_walletInfoSource, _unspentCoinsInfoSource));
 
-  getIt.registerFactory(() => LitecoinWalletService(_walletInfoSource));
+  getIt.registerFactory(() =>
+      LitecoinWalletService(_walletInfoSource, _unspentCoinsInfoSource));
 
   getIt.registerFactoryParam<WalletService, WalletType, void>(
       (WalletType param1, __) {
@@ -582,6 +598,36 @@ Future setup(
   getIt.registerFactory(() => SupportViewModel());
 
   getIt.registerFactory(() => SupportPage(getIt.get<SupportViewModel>()));
+
+  getIt.registerFactory(() {
+    final wallet = getIt.get<AppStore>().wallet;
+
+    return UnspentCoinsListViewModel(
+        wallet: wallet,
+        unspentCoinsInfo: _unspentCoinsInfoSource);
+  });
+
+  getIt.registerFactory(() => UnspentCoinsListPage(
+    unspentCoinsListViewModel: getIt.get<UnspentCoinsListViewModel>()
+  ));
+
+  getIt.registerFactoryParam<UnspentCoinsDetailsViewModel,
+      UnspentCoinsItem, UnspentCoinsListViewModel>((item, model) =>
+      UnspentCoinsDetailsViewModel(
+          unspentCoinsItem: item,
+          unspentCoinsListViewModel: model));
+
+  getIt.registerFactoryParam<UnspentCoinsDetailsPage, List, void>(
+        (List args, _) {
+        final item = args.first as UnspentCoinsItem;
+        final unspentCoinsListViewModel = args[1] as UnspentCoinsListViewModel;
+
+        return UnspentCoinsDetailsPage(
+            unspentCoinsDetailsViewModel:
+              getIt.get<UnspentCoinsDetailsViewModel>(
+                  param1: item,
+                  param2: unspentCoinsListViewModel));
+  });
 
   _isSetupFinished = true;
 }
