@@ -63,17 +63,20 @@ List<TransactionInfoRow> getAllTransations() {
 
 PendingTransactionDescription createTransactionSync(
     {String address,
+    String assetType,
     String paymentId,
     String amount,
     int priorityRaw,
     int accountIndex = 0}) {
   final addressPointer = Utf8.toUtf8(address);
+  final assetTypePointer = Utf8.toUtf8(assetType);
   final paymentIdPointer = Utf8.toUtf8(paymentId);
   final amountPointer = amount != null ? Utf8.toUtf8(amount) : nullptr;
   final errorMessagePointer = allocate<Utf8Box>();
   final pendingTransactionRawPointer = allocate<PendingTransactionRaw>();
   final created = transactionCreateNative(
           addressPointer,
+          assetTypePointer,
           paymentIdPointer,
           amountPointer,
           priorityRaw,
@@ -83,6 +86,7 @@ PendingTransactionDescription createTransactionSync(
       0;
 
   free(addressPointer);
+  free(assetTypePointer);
   free(paymentIdPointer);
 
   if (amountPointer != nullptr) {
@@ -119,6 +123,7 @@ void commitTransaction({Pointer<PendingTransactionRaw> transactionPointer}) {
 
 PendingTransactionDescription _createTransactionSync(Map args) {
   final address = args['address'] as String;
+  final assetType = args['assetType'] as String;
   final paymentId = args['paymentId'] as String;
   final amount = args['amount'] as String;
   final priorityRaw = args['priorityRaw'] as int;
@@ -126,6 +131,7 @@ PendingTransactionDescription _createTransactionSync(Map args) {
 
   return createTransactionSync(
       address: address,
+      assetType: assetType,
       paymentId: paymentId,
       amount: amount,
       priorityRaw: priorityRaw,
@@ -134,12 +140,14 @@ PendingTransactionDescription _createTransactionSync(Map args) {
 
 Future<PendingTransactionDescription> createTransaction(
         {String address,
+        String assetType,
         String paymentId,
         String amount,
         int priorityRaw,
         int accountIndex = 0}) =>
     compute(_createTransactionSync, {
       'address': address,
+      'assetType': assetType,
       'paymentId': paymentId,
       'amount': amount,
       'priorityRaw': priorityRaw,
