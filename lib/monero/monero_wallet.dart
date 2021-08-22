@@ -81,6 +81,8 @@ abstract class MoneroWalletBase extends WalletBase<MoneroBalance,
   bool _isTransactionUpdating;
   bool _hasSyncAfterStartup;
   Timer _autoSaveTimer;
+  Map<String, MoneroBalance> _havenBalance;
+  String selectedAsset = "XUSD";
 
   Future<void> init() async {
     await walletAddresses.init();
@@ -181,6 +183,7 @@ abstract class MoneroWalletBase extends WalletBase<MoneroBalance,
       pendingTransactionDescription =
       await transaction_history.createTransactionMultDest(
           outputs: moneroOutputs,
+          assetType: selectedAsset,
           priorityRaw: _credentials.priority.serialize(),
           accountIndex: walletAddresses.account.id);
     } else {

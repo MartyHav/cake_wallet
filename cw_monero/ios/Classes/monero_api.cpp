@@ -594,7 +594,7 @@ extern "C"
         return true;
     }
 
-    bool transaction_create_mult_dest(char **addresses, char *payment_id, char **amounts, uint32_t size,
+    bool transaction_create_mult_dest(char **addresses, char *asset_type, char *payment_id, char **amounts, uint32_t size,
                                                   uint8_t priority_raw, uint32_t subaddr_account, Utf8Box &error, PendingTransactionRaw &pendingTransaction)
     {
         nice(19);
@@ -618,7 +618,7 @@ extern "C"
             _payment_id = std::string(payment_id);
         }
 
-        transaction = m_wallet->createTransactionMultDest(_addresses, _payment_id, _amounts, m_wallet->defaultMixin(), priority, subaddr_account);
+        transaction = m_wallet->createTransactionMultDest(_addresses, _payment_id, _amounts, m_wallet->defaultMixin(), priority, subaddr_account,{} ,std::string(asset_type), std::string(asset_type));
 
         int status = transaction->status();
 

@@ -100,6 +100,7 @@ typedef TransactionCreate = int Function(
 
 typedef TransactionCreateMultDest = int Function(
     Pointer<Pointer<Utf8>> addresses,
+    Pointer<Utf8> assetType,
     Pointer<Utf8> paymentId,
     Pointer<Pointer<Utf8>> amounts,
     int size,

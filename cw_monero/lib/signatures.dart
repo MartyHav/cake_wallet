@@ -102,6 +102,7 @@ typedef transaction_create = Int8 Function(
 
 typedef transaction_create_mult_dest = Int8 Function(
     Pointer<Pointer<Utf8>> addresses,
+    Pointer<Utf8> assetType,
     Pointer<Utf8> paymentId,
     Pointer<Pointer<Utf8>> amounts,
     Int32 size,

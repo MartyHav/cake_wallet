@@ -113,6 +113,7 @@ PendingTransactionDescription createTransactionSync(
 
 PendingTransactionDescription createTransactionMultDestSync(
     {List<MoneroOutput> outputs,
+      String assetType,
       String paymentId,
       int priorityRaw,
       int accountIndex = 0}) {
@@ -129,11 +130,13 @@ PendingTransactionDescription createTransactionMultDestSync(
     amountsPointerPointer[i] = amountsPointers[i];
   }
 
+  final assetTypePointer = Utf8.toUtf8(assetType);
   final paymentIdPointer = Utf8.toUtf8(paymentId);
   final errorMessagePointer = allocate<Utf8Box>();
   final pendingTransactionRawPointer = allocate<PendingTransactionRaw>();
   final created = transactionCreateMultDestNative(
       addressesPointerPointer,
+      assetTypePointer,
       paymentIdPointer,
       amountsPointerPointer,
       size,
@@ -144,6 +147,7 @@ PendingTransactionDescription createTransactionMultDestSync(
       0;
 
   free(addressesPointerPointer);
+  free(assetTypePointer);
   free(amountsPointerPointer);
 
   addressesPointers.forEach((element) => free(element));
@@ -198,12 +202,14 @@ PendingTransactionDescription _createTransactionSync(Map args) {
 
 PendingTransactionDescription _createTransactionMultDestSync(Map args) {
   final outputs = args['outputs'] as List<MoneroOutput>;
+  final assetType = args['assetType'] as String;
   final paymentId = args['paymentId'] as String;
   final priorityRaw = args['priorityRaw'] as int;
   final accountIndex = args['accountIndex'] as int;
 
   return createTransactionMultDestSync(
       outputs: outputs,
+      assetType: assetType,
       paymentId: paymentId,
       priorityRaw: priorityRaw,
       accountIndex: accountIndex);
@@ -227,11 +233,13 @@ Future<PendingTransactionDescription> createTransaction(
 
 Future<PendingTransactionDescription> createTransactionMultDest(
     {List<MoneroOutput> outputs,
+      String assetType,
       String paymentId = '',
       int priorityRaw,
       int accountIndex = 0}) =>
     compute(_createTransactionMultDestSync, {
       'outputs': outputs,
+      'assetType': assetType,
       'paymentId': paymentId,
       'priorityRaw': priorityRaw,
       'accountIndex': accountIndex
