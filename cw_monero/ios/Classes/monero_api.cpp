@@ -562,6 +562,8 @@ extern "C"
         auto priority = static_cast<Monero::PendingTransaction::Priority>(priority_raw);
         std::string _payment_id;
         Monero::PendingTransaction *transaction;
+        auto tx_type = strcmp(asset_type, "XHV") == 0 ? Monero::PendingTransaction::TRANSFER : strcmp(asset_type, "XUSD") == 0 ? 
+        Monero::PendingTransaction::OFFSHORE_TRANSFER : Monero::PendingTransaction::XASSET_TRANSFER;
 
         if (payment_id != nullptr)
         {
@@ -571,11 +573,11 @@ extern "C"
         if (amount != nullptr)
         {
             uint64_t _amount = Monero::Wallet::amountFromString(std::string(amount));
-            transaction = m_wallet->createTransaction(std::string(address), _payment_id, _amount, m_wallet->defaultMixin(), priority, subaddr_account, {}, std::string(asset_type), std::string(asset_type));
+            transaction = m_wallet->createTransaction(std::string(address), _payment_id, _amount, std::string(asset_type), std::string(asset_type), tx_type, m_wallet->defaultMixin(), priority, subaddr_account, {});
         }
         else
         {
-            transaction = m_wallet->createTransaction(std::string(address), _payment_id, Monero::optional<uint64_t>(), m_wallet->defaultMixin(), priority, subaddr_account, {}, std::string(asset_type), std::string(asset_type));
+            transaction = m_wallet->createTransaction(std::string(address), _payment_id, Monero::optional<uint64_t>(),std::string(asset_type), std::string(asset_type), tx_type, m_wallet->defaultMixin(), priority, subaddr_account, {});
         }
         
         int status = transaction->status();
@@ -612,13 +614,16 @@ extern "C"
         auto priority = static_cast<Monero::PendingTransaction::Priority>(priority_raw);
         std::string _payment_id;
         Monero::PendingTransaction *transaction;
+        auto tx_type = strcmp(asset_type, "XHV") == 0 ? Monero::PendingTransaction::TRANSFER : strcmp(asset_type, "XUSD") == 0 ? 
+        Monero::PendingTransaction::OFFSHORE_TRANSFER : Monero::PendingTransaction::XASSET_TRANSFER;
 
         if (payment_id != nullptr)
         {
             _payment_id = std::string(payment_id);
         }
 
-        transaction = m_wallet->createTransactionMultDest(_addresses, _payment_id, _amounts, m_wallet->defaultMixin(), priority, subaddr_account,{} ,std::string(asset_type), std::string(asset_type));
+        transaction = m_wallet->createTransactionMultDest(_addresses, _payment_id, _amounts,
+        std::string(asset_type), std::string(asset_type), tx_type, m_wallet->defaultMixin(), priority, subaddr_account,{});
 
         int status = transaction->status();
 
