@@ -7,8 +7,8 @@ HAVEN_BRANCH=bugfix/wallet-api
 HAVEN_SRC_DIR=${WORKDIR}/haven
 
 git clone https://github.com/MartyHav/haven-main.git ${HAVEN_SRC_DIR} --branch ${HAVEN_BRANCH}
-git pull
 cd $HAVEN_SRC_DIR
+git pull
 git submodule init
 git submodule update
 
@@ -68,5 +68,4 @@ find . -path ./lib -prune -o -name '*.a' -exec cp '{}' lib \;
 
 cp -r ./lib/* $DEST_LIB_DIR
 cp ../../src/wallet/api/wallet2_api.h  $DEST_INCLUDE_DIR
-cp ../../src/offshore/asset_types.h $DEST_INCLUDE_DIR
 done
