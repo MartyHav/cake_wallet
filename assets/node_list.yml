@@ -1,5 +1,5 @@
 -
-  uri: vault.havenprotocol.org:443
+  uri: remote.eu.havenprotocol.org:37750
   login: super
   password: super
   is_default: true

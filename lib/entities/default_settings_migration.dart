@@ -19,7 +19,7 @@ import 'package:cake_wallet/entities/wallet_info.dart';
 import 'package:cake_wallet/exchange/trade.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 
-const newCakeWalletMoneroUri = 'vault.havenprotocol.org:443';
+const newCakeWalletMoneroUri = 'remote.eu.havenprotocol.org:37750';
 const cakeWalletBitcoinElectrumUri = 'electrum.cakewallet.com:50002';
 const cakeWalletLitecoinElectrumUri = 'ltc-electrum.cakewallet.com:50002';
 
