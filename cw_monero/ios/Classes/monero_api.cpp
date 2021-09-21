@@ -9,10 +9,8 @@
 #include "CwWalletListener.h"
 #if __APPLE__
 #include "../External/android/monero/include/wallet2_api.h"
-#include "../External/android/monero/include/asset_types.h"
 #else
 #include "../External/android/x86/include/wallet2_api.h"
-#include "../External/android/x86/include/asset_types.h"
 #endif
 
 using namespace std::chrono_literals;
@@ -390,9 +388,9 @@ extern "C"
     {
         std::map<std::string, uint64_t> accountBalance;
         std::map<uint32_t, std::map<std::string, uint64_t>> balanceSubaddresses = get_current_wallet()->balance(account_index);
-
+        std::vector<std::string> assetList = Monero::Assets::list();
         //prefill balances
-        for (const auto &asset_type : offshore::ASSET_TYPES) {
+        for (const auto &asset_type : assetList) {
 
             accountBalance[asset_type] = 0;
         }
@@ -430,10 +428,10 @@ extern "C"
     {
         std::map<std::string, uint64_t> accountBalance;
         std::map<uint32_t, std::map<std::string, uint64_t>> balanceSubaddresses = get_current_wallet()->unlockedBalance(account_index);
-
+        std::vector<std::string> assetList = Monero::Assets::list();
 
         //prefill balances
-        for (const auto &asset_type : offshore::ASSET_TYPES) {
+        for (const auto &asset_type : assetList) {
 
             accountBalance[asset_type] = 0;
         }
@@ -860,19 +858,20 @@ extern "C"
 
     int32_t asset_types_size() 
     {
-        return offshore::ASSET_TYPES.size();
+        return Monero::Assets::list().size();
     }
 
     char **asset_types() 
     {
-        size_t size = offshore::ASSET_TYPES.size();
+        size_t size = Monero::Assets::list().size();
+        std::vector<std::string> assetList = Monero::Assets::list();
         char **assetTypesPts;
         assetTypesPts = (char **) malloc( size * sizeof(char*));
 
         for (int i = 0; i < size; i++)
         {
 
-            std::string asset = offshore::ASSET_TYPES[i];
+            std::string asset = assetList[i];
             //assetTypes[i] = (char *)malloc( 5 * sizeof(char));
             assetTypesPts[i] = strdup(asset.c_str());
         }
