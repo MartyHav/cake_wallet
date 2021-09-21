@@ -138,7 +138,7 @@ void restoreWalletFromKeysSync(
   }
 }
 
-void loadWallet({String path, String password, int nettype = 0}) {
+void loadWallet({String path, String password, int nettype = 2}) {
   final pathPointer = Utf8.toUtf8(path);
   final passwordPointer = Utf8.toUtf8(password);
   final loaded = loadWalletNative(pathPointer, passwordPointer, nettype) != 0;
